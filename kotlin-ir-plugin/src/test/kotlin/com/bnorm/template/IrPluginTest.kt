@@ -27,7 +27,7 @@ class IrPluginTest {
   @Test
   fun `IR plugin success`() {
     val result = compile(
-      sourceFile = SourceFile.fromPath(File("/home/efstratia/Documents/di/ptixiaki/kotlinIRPlugin/kotlin-ir-plugin/src/test/kotlin/com/bnorm/template/test.kt"))
+      sourceFile = SourceFile.fromPath(File("src/test/kotlin/com/bnorm/template/test.kt"))
     )
     assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
   }
