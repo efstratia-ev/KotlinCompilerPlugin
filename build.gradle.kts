@@ -19,5 +19,6 @@ subprojects {
     mavenLocal()
     mavenCentral()
     jcenter()
+    maven { url = uri("https://clyze.jfrog.io/artifactory/default-maven-local") }
   }
 }

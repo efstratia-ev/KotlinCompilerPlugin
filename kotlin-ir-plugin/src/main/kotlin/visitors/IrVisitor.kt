@@ -5,8 +5,8 @@ import elements.HeapAllocation
 import elements.MethodInvocation
 import org.clyze.persistent.metadata.Configuration
 import org.clyze.persistent.metadata.FileInfo
+import org.clyze.persistent.metadata.FileReporter
 import org.clyze.persistent.metadata.Printer
-import org.clyze.persistent.metadata.jvm.JvmFileReporter
 import org.clyze.persistent.metadata.jvm.JvmMetadata
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.jvm.*
@@ -34,7 +34,7 @@ class IrVisitor(): IrElementVisitorVoid {
     fileEntry=declaration.fileEntry
     super.visitFile(declaration)
     val fileInfo = FileInfo(packageName, "inputName", "input/file/path", "test source", metadata)
-    val reporter = JvmFileReporter(configuration, fileInfo)
+    val reporter = FileReporter(configuration, fileInfo.elements)
     reporter.createReportFile("output-path.json")
     reporter.printReportStats()
     println(declaration.dump())
