@@ -18,23 +18,16 @@ package com.bnorm.template
 
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
-import kotlin.test.assertEquals
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.junit.Test
+import java.io.File
+import kotlin.test.assertEquals
 
 class IrPluginTest {
   @Test
   fun `IR plugin success`() {
     val result = compile(
-      sourceFile = SourceFile.kotlin(
-        "main.kt", """
-fun main() {
-  println(debug())
-}
-
-fun debug() = "Hello, World!"
-"""
-      )
+      sourceFile = SourceFile.fromPath(File("/home/efstratia/Documents/di/ptixiaki/kotlinIRPlugin/kotlin-ir-plugin/src/test/kotlin/com/bnorm/template/test.kt"))
     )
     assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
   }
