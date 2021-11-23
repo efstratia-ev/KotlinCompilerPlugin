@@ -11,6 +11,7 @@ dependencies {
 
   kapt("com.google.auto.service:auto-service:1.0-rc7")
   compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")
+  implementation("org.clyze:metadata-model:2.3.0")
 }
 
 tasks.named("compileKotlin") { dependsOn("syncSource") }
