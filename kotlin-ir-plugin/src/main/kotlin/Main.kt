@@ -29,10 +29,16 @@ fun main(args: Array<String>) {
       }
     }
     if (!File(sourceDir).isDirectory) {
-      println("Flag $sourceDirFlag must be a directory")
+      println("Flag $sourceDirFlag must be a directory: $sourceDir")
       return
     }
-  val componentRegistrar = TemplateComponentRegistrar(outputDir)
+    val outDir = File(outputDir)
+    println("Using output directory: ${outDir.canonicalPath}")
+    if (!outDir.exists()) {
+      println("$outputDir does not exist, creating...")
+      outDir.mkdirs()
+    }
+    val componentRegistrar = TemplateComponentRegistrar(outputDir)
     File(sourceDir).walkTopDown().forEach {
       if (it.toString().endsWith(".kt")) {
         KotlinCompilation().apply {
