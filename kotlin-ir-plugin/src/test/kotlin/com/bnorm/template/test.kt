@@ -13,6 +13,7 @@ class La(){
   }
   fun aa() {
     class b {
+      val iii=La(3)
       init { var a = "la" }
     }
   }

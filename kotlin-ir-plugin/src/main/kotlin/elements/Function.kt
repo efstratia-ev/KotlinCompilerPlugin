@@ -10,12 +10,9 @@ import org.jetbrains.kotlin.ir.descriptors.toIrBasedDescriptor
 import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.resolve.jvm.annotations.findSynchronizedAnnotation
-import java.util.HashMap
 
 
 class Function(declaration: IrFunction, fileEntry: SourceManager.FileEntry, fileName:String):JvmMethod() {
-  var methodInvocations : HashMap<String, Int> = HashMap<String, Int> ()
-  var heapAllocations : HashMap<String, Int> = HashMap<String, Int> ()
   init {
     super.setPosition(getPosition(declaration,fileEntry))//TODO:diorthosi
     super.setSourceFileName(fileName)
@@ -29,7 +26,7 @@ class Function(declaration: IrFunction, fileEntry: SourceManager.FileEntry, file
     super.setStatic(declaration.isStatic)
     super.setInterface(declaration.parentClassOrNull?.isInterface == true)
     super.setAbstract(declaration.toIrBasedDescriptor().modality.toString()=="ABSTRACT")
-    super.setNative(false) //TODO::?
+    super.setNative(declaration.isExternal)
     super.setSynchronized(declaration.toIrBasedDescriptor().findSynchronizedAnnotation()!=null)
     super.setFinal(declaration.toIrBasedDescriptor().modality.toString()=="FINAL")
     super.setSynthetic(declaration.origin.isSynthetic)
@@ -82,9 +79,4 @@ class Function(declaration: IrFunction, fileEntry: SourceManager.FileEntry, file
       " "+super.getName()+"("+super.getParamTypes().joinToString(separator=",")+")>"
   }
 
-  private fun addHeapAllocation(id:String):Int{
-    if(heapAllocations.contains(id)) heapAllocations[id]= heapAllocations[id]!! +1
-    else heapAllocations[id] = 0
-    return heapAllocations[id]!!
-  }
 }

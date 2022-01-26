@@ -25,12 +25,10 @@ import visitors.IrVisitor
 
 
 class TemplateIrGenerationExtension(
-  private val messageCollector: MessageCollector,
-  private val string: String,
-  private val file: String
+  private val outputPath: String
 ) : IrGenerationExtension {
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-    moduleFragment.accept(IrVisitor(),null)
+    moduleFragment.accept(IrVisitor(outputPath),null)
   }
 }
 

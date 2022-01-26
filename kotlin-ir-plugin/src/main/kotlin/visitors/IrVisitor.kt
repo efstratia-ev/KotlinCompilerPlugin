@@ -10,6 +10,8 @@ import org.clyze.persistent.metadata.Printer
 import org.clyze.persistent.metadata.jvm.JvmMetadata
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.jvm.*
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.SourceManager
@@ -21,23 +23,27 @@ import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import java.util.*
 //TODO::fix types
-class IrVisitor(): IrElementVisitorVoid {
+class IrVisitor(private val outputPath:String): IrElementVisitorVoid {
   var packageName: String = ""
   var configuration = Configuration(Printer(true))
   var metadata = JvmMetadata()
   private lateinit var fileEntry: SourceManager.FileEntry
   private var fileName:String=""
   private var functionStack=Stack<elements.Function>()
+  private var classStack=Stack<elements.ClassReporter>()
 
   override fun visitFile(declaration: IrFile) { //TODO::fix variables
+    declaration.fqName
     fileName=declaration.name
     fileEntry=declaration.fileEntry
     super.visitFile(declaration)
     val fileInfo = FileInfo(packageName, "inputName", "input/file/path", "test source", metadata)
     val reporter = FileReporter(configuration, fileInfo.elements)
-    reporter.createReportFile("output-path.json")
+    val nm=Paths.get(fileName).fileName.toString()
+    reporter.createReportFile(outputPath+"/"+nm.substring(0,nm.length-3)+".json")
+  //  reporter.createReportFile("b.json")
     reporter.printReportStats()
-    println(declaration.dump())
+    //println(declaration.dump())
   }
 
   override fun visitVararg(expression: IrVararg) {
@@ -47,8 +53,9 @@ class IrVisitor(): IrElementVisitorVoid {
   override fun visitClass(declaration: IrClass) {
     val classElement=ClassReporter(declaration,fileEntry,fileName,packageName)
     metadata.jvmClasses.add(classElement)
-
+    classStack.push(classElement)
     super.visitClass(declaration)
+    classStack.pop()
   }
 
 
@@ -69,14 +76,22 @@ class IrVisitor(): IrElementVisitorVoid {
 
   override fun visitVariable(declaration: IrVariable) {
 
-    val variableElement=elements.Variable(declaration,fileEntry,fileName,if(functionStack.isNotEmpty()) functionStack.peek() else null)
+    val variableElement=elements.Variable(declaration,fileEntry,fileName,if(functionStack.isNotEmpty()) functionStack.peek() else null,false)
     metadata.jvmVariables.add(variableElement)
 
     super.visitVariable(declaration)
   }
 
+
+  override fun visitValueParameter(declaration: IrValueParameter) {
+    val variableElement=elements.Variable(declaration,fileEntry,fileName,if(functionStack.isNotEmpty()) functionStack.peek() else null,true)
+    metadata.jvmVariables.add(variableElement)
+
+    super.visitValueParameter(declaration)
+  }
+
   override fun visitCall(expression: IrCall) {
-    val methodInv=MethodInvocation(expression,fileEntry,fileName,if(functionStack.isNotEmpty()) functionStack.peek() else null)
+    val methodInv=MethodInvocation(expression,fileEntry,fileName,if(functionStack.isNotEmpty()) functionStack.peek() else null,if(classStack.isNotEmpty()) classStack.peek() else null)
     metadata.jvmInvocations.add(methodInv)
 
     super.visitCall(expression)
@@ -84,7 +99,7 @@ class IrVisitor(): IrElementVisitorVoid {
 
 
   override fun visitConstructorCall(expression: IrConstructorCall) {
-    val heapAllocationElement=HeapAllocation(expression,fileEntry,fileName,if(functionStack.isNotEmpty()) functionStack.peek() else null)
+    val heapAllocationElement=HeapAllocation(expression,fileEntry,fileName,if(functionStack.isNotEmpty()) functionStack.peek() else null,if(classStack.isNotEmpty()) classStack.peek() else null)
     metadata.jvmHeapAllocations.add(heapAllocationElement)
 
     super.visitConstructorCall(expression)
@@ -92,7 +107,15 @@ class IrVisitor(): IrElementVisitorVoid {
 
   override fun visitElement(element: IrElement) {
     element.acceptChildren(this, null)
-    // println(element.dump())
+    val info=fileEntry.getSourceRangeInfo(element.startOffset,element.endOffset)
+    val a=Position(info.startLineNumber.toLong(), info.endLineNumber.toLong(), info.startColumnNumber.toLong(),
+      info.endColumnNumber.toLong()
+    )
+    print("a")
+  }
+
+  override fun visitDeclaration(declaration: IrDeclarationBase) {
+    super.visitDeclaration(declaration)
   }
 
   override fun visitPackageFragment(declaration: IrPackageFragment) {

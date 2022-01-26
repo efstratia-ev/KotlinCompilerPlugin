@@ -2,24 +2,19 @@ package elements
 
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.jvm.JvmHeapAllocation
-import org.jetbrains.kotlin.backend.common.serialization.proto.IrClass
-import org.jetbrains.kotlin.backend.jvm.codegen.AnnotationCodegen.Companion.annotationClass
 import org.jetbrains.kotlin.ir.SourceManager
-import org.jetbrains.kotlin.ir.declarations.IrVariable
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.types.getClass
-import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
 import org.jetbrains.kotlin.ir.types.isArray
-import org.jetbrains.kotlin.ir.util.dump
 
-class HeapAllocation(expression: IrConstructorCall, fileEntry: SourceManager.FileEntry, fileName:String,function: Function?):JvmHeapAllocation() {
+class HeapAllocation(expression: IrConstructorCall, fileEntry: SourceManager.FileEntry, fileName:String,function: Function?,classReporter: ClassReporter?):JvmHeapAllocation() {
   init {
     super.setPosition(getPosition(expression,fileEntry))
     super.setSourceFileName(fileName)
     super.setSource(true) //TODO
     super.setAllocatedTypeId(createAllocatedTypeId(expression))
     super.setAllocatingMethodId(function?.symbolId ?: "") //TODO: when inIIB is true?
-    super.setInIIB(false)
+    super.setInIIB(getinIIB(function,classReporter))
     super.setArray(expression.type.isArray())
     super.setSymbolId(createSymbolId()) //TODO:arithmisi
   }
@@ -40,8 +35,10 @@ class HeapAllocation(expression: IrConstructorCall, fileEntry: SourceManager.Fil
     return expression.type.getClass()!!.symbol.signature.packageFqName().toString()+"."+expression.type.getClass()!!.name.toString()
   }
 
-  private fun getinIIB(expression: IrConstructorCall,function: Function?): Boolean {
+  private fun getinIIB(function: Function?,classReporter: ClassReporter?): Boolean {
     if(function==null) return true
-    return false
+    if(classReporter==null) return false
+    if(function.declaringClassId==classReporter.id) return false
+    return true
   }
 }

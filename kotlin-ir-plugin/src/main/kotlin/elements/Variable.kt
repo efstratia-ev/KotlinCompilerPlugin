@@ -3,11 +3,11 @@ package elements
 import org.clyze.persistent.model.Position
 import org.jetbrains.kotlin.ir.SourceManager
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrVariable
+import org.jetbrains.kotlin.ir.declarations.IrValueDeclaration
 import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
 import org.jetbrains.kotlin.ir.util.isLocal
 
-class Variable(declaration: IrVariable, fileEntry: SourceManager.FileEntry, fileName:String, function: Function?) :org.clyze.persistent.model.jvm.JvmVariable(){
+class Variable(declaration: IrValueDeclaration, fileEntry: SourceManager.FileEntry, fileName:String, function: Function?, isParam :Boolean) :org.clyze.persistent.model.jvm.JvmVariable(){
   init {
     super.setPosition(getPosition(declaration,fileEntry))
     super.setSourceFileName(fileName)
@@ -15,19 +15,14 @@ class Variable(declaration: IrVariable, fileEntry: SourceManager.FileEntry, file
     super.setName(declaration.name.asString())
     super.setType(declaration.type.originalKotlinType.toString())
     super.setLocal(declaration.isLocal)
-    super.setParameter(false) //TODO::method parameter?
+    super.setParameter(isParam) //TODO::type parameters?
     super.setInIIB(getinIIB(declaration))
     super.setDeclaringMethodId(getDeclaringMethodId(function)) //TODO: when inIIB is true?
     super.setSymbolId(createSymbolId())
   }
 
-  private fun getPosition(declaration: IrVariable, fileEntry: SourceManager.FileEntry): Position {
+  private fun getPosition(declaration: IrValueDeclaration, fileEntry: SourceManager.FileEntry): Position {
     val info=fileEntry.getSourceRangeInfo(declaration.startOffset,declaration.endOffset)
-    var a= declaration.initializer?.startOffset?.let { declaration.initializer?.endOffset?.let { it1 ->
-      fileEntry.getSourceRangeInfo(it,
-        it1
-      )
-    } }
     return Position(info.startLineNumber.toLong(), info.endLineNumber.toLong(), info.startColumnNumber.toLong(),
       info.endColumnNumber.toLong()
     )
@@ -37,7 +32,7 @@ class Variable(declaration: IrVariable, fileEntry: SourceManager.FileEntry, file
     return super.getDeclaringMethodId()+"/VAR"+"@"+super.getType()+"@"+super.getName()
   }
 
-  private fun getinIIB(declaration: IrVariable): Boolean{
+  private fun getinIIB(declaration: IrValueDeclaration): Boolean{
     return declaration.parent is IrClass
   }
 

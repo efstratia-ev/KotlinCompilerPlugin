@@ -4,19 +4,16 @@ import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.jvm.JvmMethodInvocation
 import org.jetbrains.kotlin.ir.SourceManager
 import org.jetbrains.kotlin.ir.expressions.IrCall
-import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
-import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
-import kotlin.Function
 
-class MethodInvocation(expression: IrCall, fileEntry: SourceManager.FileEntry, fileName:String,function: elements.Function?):JvmMethodInvocation() {
+class MethodInvocation(expression: IrCall, fileEntry: SourceManager.FileEntry, fileName:String,function: Function?, classReporter: ClassReporter?):JvmMethodInvocation() {
   init {
     super.setPosition(getPosition(expression,fileEntry))
     super.setSourceFileName(fileName)
     super.setSource(true) //TODO
     super.setName(expression.symbol.owner.name.toString())
     super.setInvokingMethodId(function?.symbolId ?: "") //TODO:lathos
-    super.setInIIB(true) //TODO
+    super.setInIIB(getinIIB(function,classReporter)) //TODO
     super.setSymbolId(createSymbolId(expression)) //TODO:arithmisi
   }
 
@@ -29,6 +26,13 @@ class MethodInvocation(expression: IrCall, fileEntry: SourceManager.FileEntry, f
 
   private fun createSymbolId(expression: IrCall):String{
     return super.getInvokingMethodId()+"/"+expression.symbol.owner.returnType.originalKotlinType.toString()+"."+super.getName()+"/"
+  }
+
+  private fun getinIIB(function: Function?, classReporter: ClassReporter?): Boolean {
+    if(function==null) return true
+    if(classReporter==null) return false
+    if(function.declaringClassId==classReporter.id) return false
+    return true
   }
 
 }
