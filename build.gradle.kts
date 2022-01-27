@@ -16,8 +16,8 @@ repositories {
 }
 
 allprojects {
-  group = "com.bnorm.template"
-  version = "0.1.0-SNAPSHOT"
+  group = "org.clyze"
+  version = "0.1.0"
 }
 
 subprojects {
