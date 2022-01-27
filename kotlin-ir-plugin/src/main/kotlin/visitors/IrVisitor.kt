@@ -10,27 +10,24 @@ import org.clyze.persistent.metadata.Printer
 import org.clyze.persistent.metadata.jvm.JvmMetadata
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.jvm.*
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.Paths
 import org.jetbrains.kotlin.ir.IrElement
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.SourceManager
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
 import org.jetbrains.kotlin.ir.types.isArray
-import org.jetbrains.kotlin.ir.util.dump
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import java.util.*
 //TODO::fix types
-class IrVisitor(private val outputPath:String): IrElementVisitorVoid {
-  var packageName: String = ""
-  var configuration = Configuration(Printer(true))
-  var metadata = JvmMetadata()
+class IrVisitor(private val outputPath: String, private val artifact: String): IrElementVisitorVoid {
+  private var packageName: String = ""
+  private var configuration = Configuration(Printer(true))
+  private var metadata = JvmMetadata()
   private lateinit var fileEntry: SourceManager.FileEntry
   private var fileName:String=""
   private var functionStack=Stack<elements.Function>()
-  private var classStack=Stack<elements.ClassReporter>()
+  private var classStack=Stack<ClassReporter>()
 
   override fun visitFile(declaration: IrFile) { //TODO::fix variables
     declaration.fqName
@@ -147,6 +144,7 @@ class IrVisitor(private val outputPath:String): IrElementVisitorVoid {
     val ha= JvmHeapAllocation(pos,
       fileName,
       true,//TODO::??
+      artifact,
       "String symbolId",
       expression.type.originalKotlinType.toString(),
       "s",//expression.symbol.owner.toString(), //TODO::id??

@@ -29,7 +29,7 @@ dependencies {
   implementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.6")
     implementation(kotlin("stdlib-jdk8"))
 
-  implementation("org.clyze:metadata-model:2.3.0")
+  implementation("org.clyze:metadata-model:2.4.1")
 }
 
 buildConfig {

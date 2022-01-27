@@ -18,17 +18,16 @@ package com.bnorm.template
 
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
-import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.ir.declarations.*
 import visitors.IrVisitor
-
 
 class TemplateIrGenerationExtension(
   private val outputPath: String
 ) : IrGenerationExtension {
   override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-    moduleFragment.accept(IrVisitor(outputPath),null)
+    val artifact = moduleFragment.name.asString()
+    println("outputPath=$outputPath, artifact=$artifact")
+    moduleFragment.accept(IrVisitor(outputPath, artifact),null)
   }
 }
 
