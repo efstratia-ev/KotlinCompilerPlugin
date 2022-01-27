@@ -13,10 +13,13 @@ fun main(args: Array<String>) {
         .required(true).desc("Sources (.zip/.jar file or directory).").build()
     options.addOption(srcOpt)
 
-    val irOpt = Option.builder().option("i").longOpt("ir")
+    val irOpt = Option.builder().option("c").longOpt("add-classpath")
         .hasArg(true).argName("PATH").numberOfArgs(Option.UNLIMITED_VALUES)
         .desc("IR .jar file, used to provide code dependencies.").build()
     options.addOption(irOpt)
+
+    val inheritClasspathOpt = Option(null, "inherit-classpath", false, "Inherit the classpath of the current program. This is provided for test purposes.")
+    options.addOption(inheritClasspathOpt)
 
     val outOpt = Option.builder().option("o").longOpt("out")
         .hasArg(true).argName("PATH")
@@ -64,7 +67,7 @@ fun main(args: Array<String>) {
             sources = ktFiles.toList()
             useIR = true
             compilerPlugins = listOf(componentRegistrar)
-            inheritClassPath = true
+            inheritClassPath = cli.hasOption(inheritClasspathOpt.longOpt)
             classpaths = irJars.map { File(it) }.toList() + complement
         }
         kotlinc.compile()
