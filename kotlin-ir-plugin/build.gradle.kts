@@ -20,7 +20,6 @@ dependencies {
   implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
   implementation("commons-cli:commons-cli:1.5.0")
   implementation("org.clyze:jphantom:1.3")
-  implementation("com.google.guava:guava:30.1.1-jre")
 
   testImplementation("org.jetbrains.kotlin:kotlin-test")
 
