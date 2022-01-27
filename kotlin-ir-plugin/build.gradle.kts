@@ -26,7 +26,7 @@ dependencies {
   testImplementation(kotlin("test-junit"))
   implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable")
   implementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.6")
-    implementation(kotlin("stdlib-jdk8"))
+  implementation(kotlin("stdlib-jdk8"))
 
   implementation("org.clyze:metadata-model:2.4.1")
 }

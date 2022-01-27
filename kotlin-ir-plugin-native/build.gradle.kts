@@ -11,7 +11,10 @@ dependencies {
 
   kapt("com.google.auto.service:auto-service:1.0-rc7")
   compileOnly("com.google.auto.service:auto-service-annotations:1.0-rc7")
-  implementation("org.clyze:metadata-model:2.3.0")
+  implementation("org.clyze:metadata-model:2.4.1")
+  implementation("com.github.tschuchortdev:kotlin-compile-testing:1.2.6")
+  implementation("commons-cli:commons-cli:1.5.0")
+  implementation("org.clyze:jphantom:1.3")
 }
 
 tasks.named("compileKotlin") { dependsOn("syncSource") }
