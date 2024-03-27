@@ -2,43 +2,45 @@ package elements
 
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.jvm.JvmHeapAllocation
-import org.jetbrains.kotlin.ir.SourceManager
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
 import org.jetbrains.kotlin.ir.types.isArray
+import org.jetbrains.kotlin.ir.util.fqNameForIrSerialization
+import util.KotlinFileInfo
 
-class HeapAllocation(expression: IrConstructorCall, fileEntry: SourceManager.FileEntry, fileName:String,function: Function?,classReporter: ClassReporter?):JvmHeapAllocation() {
+class HeapAllocation(expression: IrConstructorCall, fileInfo: KotlinFileInfo, function: Function):JvmHeapAllocation() {
   init {
-    super.setPosition(getPosition(expression,fileEntry))
-    super.setSourceFileName(fileName)
-    super.setSource(true) //TODO
+    super.setPosition(getPosition(expression,fileInfo))
+    super.setSourceFileName(fileInfo.sourceFileName)
+    super.setSource(fileInfo.existsInSources(position))
     super.setAllocatedTypeId(createAllocatedTypeId(expression))
-    super.setAllocatingMethodId(function?.symbolId ?: "") //TODO: when inIIB is true?
-    super.setInIIB(getinIIB(function,classReporter))
+    super.setAllocatingMethodId(getAllocatingMethodId(function))
+    super.setInIIB(getInIIB(function))
     super.setArray(expression.type.isArray())
-    super.setSymbolId(createSymbolId()) //TODO:arithmisi
+    super.setSymbolId(createSymbolId(function))
   }
 
-  private fun getPosition(expression: IrConstructorCall, fileEntry: SourceManager.FileEntry): Position {
-    val info=fileEntry.getSourceRangeInfo(expression.startOffset, expression.endOffset)
-    return Position(info.startLineNumber.toLong(), info.endLineNumber.toLong(), info.startColumnNumber.toLong(),
-      info.endColumnNumber.toLong()
-    )
+  private fun getPosition(expression: IrConstructorCall, fileInfo: KotlinFileInfo): Position {
+    val a=fileInfo.seeSource(expression.startOffset,expression.endOffset)
+    return fileInfo.getPosition(expression.startOffset,expression.type.originalKotlinType.toString())
   }
 
-  private fun createSymbolId():String{
-    if(super.isInIIB()) return ""//TODO::
-    return super.getAllocatingMethodId()+"/new "+super.getAllocatedTypeId()+"/"
+  private fun createSymbolId(function: Function):String{
+    val id=if(isInIIB) "<"+function.declaringClassId+">" else super.getAllocatingMethodId()+"/"+function.getHeapAllocationsCounter(id)
+    return id+"/new "+super.getAllocatedTypeId()+"/"+function.getHeapAllocationsCounter(id)
   }
 
   private fun createAllocatedTypeId(expression: IrConstructorCall):String{
-    return expression.type.getClass()!!.symbol.signature.packageFqName().toString()+"."+expression.type.getClass()!!.name.toString()
+    return expression.type.getClass()!!.parent.fqNameForIrSerialization.toString()+"."+expression.type.getClass()!!.name.asString()
   }
 
-  private fun getinIIB(function: Function?,classReporter: ClassReporter?): Boolean {
-    if(function==null) return true
-    if(classReporter==null) return false
-    if(function.declaringClassId==classReporter.id) return false
-    return true
+  private fun getInIIB(function: Function): Boolean{
+    return function.symbolId==""
+  }
+
+  private fun getAllocatingMethodId(function: Function):String{
+    if(isInIIB) return ""
+    return function.symbolId
   }
 }

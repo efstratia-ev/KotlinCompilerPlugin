@@ -1,32 +1,26 @@
 package elements
 
 import org.clyze.persistent.model.Position
-import org.jetbrains.kotlin.ir.SourceManager
 import org.jetbrains.kotlin.ir.declarations.IrField
 import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
-import org.jetbrains.kotlin.ir.util.parentAsClass
+import util.KotlinFileInfo
 
-class Field(declaration: IrField, fileEntry: SourceManager.FileEntry, fileName:String, packageName:String):org.clyze.persistent.model.jvm.JvmField() {
+class Field(declaration: IrField, fileInfo: KotlinFileInfo, classReporter: Class?):org.clyze.persistent.model.jvm.JvmField() {
   init {
-    super.setPosition(getPosition(declaration,fileEntry)) //TODO:check
-    super.setSourceFileName(fileName)
-    super.setSource(true) //TODO
+    super.setSourceFileName(fileInfo.sourceFileName)
     super.setName(declaration.name.asString())
+    super.setPosition(getPosition(declaration,fileInfo))
+    super.setSource(fileInfo.existsInSources(position))
     super.setType(declaration.type.originalKotlinType.toString())
-    super.setDeclaringClassId(getDeclaringClassId(declaration,packageName))
+    super.setDeclaringClassId(classReporter!!.symbolId)
     super.setStatic(declaration.isStatic)
     super.setSymbolId(createSymbolId())
   }
 
-  private fun getPosition(declaration: IrField, fileEntry: SourceManager.FileEntry): Position {
-    val info=fileEntry.getSourceRangeInfo(declaration.startOffset,declaration.endOffset)
-    return Position(info.startLineNumber.toLong(), info.endLineNumber.toLong(), info.startColumnNumber.toLong(),
-      info.endColumnNumber.toLong()
-    )
-  }
-
-  private fun getDeclaringClassId(declaration: IrField,packageName: String):String{
-    return packageName+"."+declaration.parentAsClass.name.toString()
+  private fun getPosition(declaration: IrField, fileInfo: KotlinFileInfo): Position {
+    val startIndex:Int = if(declaration.isFinal) fileInfo.findKeyword(declaration.startOffset,"val")
+    else fileInfo.findKeyword(declaration.startOffset,"var")
+    return fileInfo.getPosition(fileInfo.skipWhitespaces(startIndex),name)
   }
 
   private fun createSymbolId():String{

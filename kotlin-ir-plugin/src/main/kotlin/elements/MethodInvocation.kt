@@ -2,37 +2,56 @@ package elements
 
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.jvm.JvmMethodInvocation
-import org.jetbrains.kotlin.ir.SourceManager
-import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
+import util.KotlinFileInfo
 
-class MethodInvocation(expression: IrCall, fileEntry: SourceManager.FileEntry, fileName:String,function: Function?, classReporter: ClassReporter?):JvmMethodInvocation() {
+class MethodInvocation(expression: org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression, fileInfo: KotlinFileInfo, function: Function):JvmMethodInvocation() {
   init {
-    super.setPosition(getPosition(expression,fileEntry))
-    super.setSourceFileName(fileName)
-    super.setSource(true) //TODO
+    super.setSourceFileName(fileInfo.sourceFileName)
     super.setName(expression.symbol.owner.name.toString())
-    super.setInvokingMethodId(function?.symbolId ?: "") //TODO:lathos
-    super.setInIIB(getinIIB(function,classReporter)) //TODO
-    super.setSymbolId(createSymbolId(expression)) //TODO:arithmisi
+    super.setTargetReturnType(expression.type.originalKotlinType.toString())
+    super.setPosition(getPosition(expression,fileInfo))
+    super.setInIIB(getInIIB(function))
+    super.setInvokingMethodId(getInvokingMethodId(function))
+    super.setTargetType(getTargetType(expression))
+    super.setSymbolId(createSymbolId(function))
+    super.setSource(fileInfo.existsInSources(position))
+    super.setTargetParamTypes(getParamType(expression))
   }
 
-  private fun getPosition(expression: IrCall, fileEntry: SourceManager.FileEntry): Position {
-    val info=fileEntry.getSourceRangeInfo(expression.startOffset,expression.endOffset)
-    return Position(info.startLineNumber.toLong(), info.endLineNumber.toLong(), info.startColumnNumber.toLong(),
-      info.endColumnNumber.toLong()
-    )
+  private fun getPosition(expression: org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression, fileInfo: KotlinFileInfo): Position {
+    return fileInfo.getPosition(expression.startOffset,if(name=="<init>") expression.type.originalKotlinType.toString() else name)
+  }
+  private fun getParamType(expression: org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression):String{ //check
+    val paramCount=expression.valueArgumentsCount
+    var parameterTypes=""
+    for (i in 0 until paramCount) {
+      parameterTypes= expression.getValueArgument(i)?.type?.originalKotlinType.toString()
+      if(i!=paramCount-1) parameterTypes+=","
+    }
+    return parameterTypes
   }
 
-  private fun createSymbolId(expression: IrCall):String{
-    return super.getInvokingMethodId()+"/"+expression.symbol.owner.returnType.originalKotlinType.toString()+"."+super.getName()+"/"
+  private fun getTargetType(expression: org.jetbrains.kotlin.ir.expressions.IrFunctionAccessExpression):String?{
+    if(expression.extensionReceiver!=null) {
+      return expression.extensionReceiver!!.type.toString()
+    }
+    return null
   }
 
-  private fun getinIIB(function: Function?, classReporter: ClassReporter?): Boolean {
-    if(function==null) return true
-    if(classReporter==null) return false
-    if(function.declaringClassId==classReporter.id) return false
-    return true
+  private fun createSymbolId(function: Function):String{
+    var id=if(isInIIB) "<"+function.declaringClassId+">" else super.getInvokingMethodId()
+    id+="/"+ if(targetType!=null) { "$targetType." } else ""
+    return id+"."+super.getName() +"/"+function.getMethodInvocationsCounter(id)
+  }
+
+  private fun getInIIB(function: Function): Boolean{
+    return function.symbolId==""
+  }
+
+  private fun getInvokingMethodId(function: Function):String{
+    if(isInIIB) return ""
+    return function.symbolId
   }
 
 }
