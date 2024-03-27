@@ -26,8 +26,10 @@ fun main(args: Array<String>) {
         .desc("The output directory.").build()
     options.addOption(outOpt)
 
-    val jphantomOpt = Option("j", "run-jphantom", false, "Assuming a single code (fat) JAR, run jphantom. This is an experimental flag.")
-    options.addOption(jphantomOpt)
+    val irComplementOpt = Option.builder().longOpt("add-classpath-complement")
+        .hasArg(true).argName("JAR").numberOfArgs(1)
+        .desc("Add to the classpath the complement of the given JAR file. This is an experimental flag.").build()
+    options.addOption(irComplementOpt)
 
     val helpOpt = Option("h", "help", false, "Print help.")
     options.addOption(helpOpt)
@@ -58,7 +60,7 @@ fun main(args: Array<String>) {
             outDir.mkdirs()
         }
 
-        val complement = complementCode(cli, jphantomOpt, irJars)
+        val complement = complementCode(cli, irComplementOpt)
         val componentRegistrar = TemplateComponentRegistrar(outputDir)
         val ktFiles = File(sourceDir).walkTopDown()
             .filter { it.toString().endsWith(".kt") }
@@ -84,8 +86,8 @@ private fun printUsage(options: Options) {
     formatter.printHelp("kotlin-compiler-plugin [OPTION]...", options)
 }
 
-private fun complementCode(cli : CommandLine, jphantomOpt : Option, irJars : Array<String?>) : List<File> {
-    if (cli.hasOption(jphantomOpt.opt)) {
+private fun complementCode(cli : CommandLine, irComplementOpt : Option) : List<File> {
+    if (cli.hasOption(irComplementOpt.longOpt)) {
         println("Computing code complement...")
         val tmpJarComplementDir = Files.createTempDirectory("kotlinc-plugin-jphantom").toFile()
         // tmpJarComplementDir.deleteOnExit()
@@ -93,15 +95,13 @@ private fun complementCode(cli : CommandLine, jphantomOpt : Option, irJars : Arr
         val complementJarPath = complementJar.canonicalPath
         val phantomsDir = File(tmpJarComplementDir, "phantoms")
         phantomsDir.mkdirs()
-        if (irJars.size == 1) {
-            val irJar = irJars[0]
-            org.clyze.jphantom.Driver.main(arrayOf(irJar, "-o", complementJarPath, "-d", phantomsDir.canonicalPath, "-v", "0"))
-            if (complementJar.exists()) {
-                println("Using complement JAR: $complementJarPath")
-                return listOf(complementJar)
-            } else
-                println("ERROR: could not create complement JAR via jphantom.")
-        }
+        val irJar = cli.getOptionValue(irComplementOpt.longOpt)
+        org.clyze.jphantom.Driver.main(arrayOf(irJar, "-o", complementJarPath, "-d", phantomsDir.canonicalPath, "-v", "0"))
+        if (complementJar.exists()) {
+            println("Using complement JAR: $complementJarPath")
+            return listOf(complementJar)
+        } else
+            println("ERROR: could not create complement JAR via jphantom.")
     }
     return listOf()
 }

@@ -16,6 +16,7 @@
 
 package com.bnorm.template
 
+import org.clyze.BuildConfig
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
