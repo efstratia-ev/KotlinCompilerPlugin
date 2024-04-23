@@ -5,7 +5,9 @@ import org.clyze.persistent.metadata.jvm.JvmMetadata
 import org.clyze.persistent.model.Position
 import org.jetbrains.kotlin.ir.IrFileEntry
 
-class KotlinFileInfo(packageName :String, inputName :String, private val fileEntry : IrFileEntry, source :String): FileInfo(packageName,inputName,fileEntry.toString(),source,JvmMetadata()) {
+class KotlinFileInfo(packageName :String, inputName :String, private val fileEntry : IrFileEntry, source :String):
+        FileInfo(packageName,inputName,fileEntry.toString(),source,JvmMetadata()) {
+
     fun getPosition(startOffset: Int, name: String): Position {
         if(source.substring(startOffset,startOffset+name.length) != name) return Position(-1,-1,-1,-1)
         val info = fileEntry.getSourceRangeInfo(startOffset, startOffset+name.length)
@@ -16,6 +18,15 @@ class KotlinFileInfo(packageName :String, inputName :String, private val fileEnt
     }
 
     fun getPosition(startOffset: Int, endOffset: Int): Position {
+        val info = fileEntry.getSourceRangeInfo(startOffset, endOffset)
+        return Position(
+                info.startLineNumber.toLong(), info.endLineNumber.toLong(), info.startColumnNumber.toLong(),
+                info.endColumnNumber.toLong()
+        )
+    }
+
+    fun getOuterPosition(startOffset: Int, endOffset: Int, source: Boolean): Position {
+        if(!source) return Position(-1,-1,-1,-1)
         val info = fileEntry.getSourceRangeInfo(startOffset, startOffset+endOffset)
         return Position(
                 info.startLineNumber.toLong(), info.endLineNumber.toLong(), info.startColumnNumber.toLong(),
@@ -37,5 +48,13 @@ class KotlinFileInfo(packageName :String, inputName :String, private val fileEnt
 
     fun existsInSources(pos: Position):Boolean{
         return pos.startLine >= 0
+    }
+
+    fun startsWithVar(offset: Int): Boolean{
+        return source.startsWith("var ",offset)
+    }
+
+    fun startsWithVal(offset: Int): Boolean{
+        return source.startsWith("val ",offset)
     }
 }

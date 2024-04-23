@@ -13,7 +13,7 @@ class Class(declaration: IrClass, fileInfo: KotlinFileInfo) : JvmClass() {
     super.setName(declaration.name.asString())
     super.setPosition(getPosition(declaration, fileInfo))
     super.setSource(fileInfo.existsInSources(position))
-    super.setPackageName(packageName)
+    super.setPackageName(declaration.packageFqName.toString())
     super.setSymbolId(declaration.parent.fqNameForIrSerialization.toString()+"."+declaration.name.asString())
     super.setInterface(declaration.isInterface)
     super.setEnum(declaration.isEnumClass)
@@ -29,10 +29,14 @@ class Class(declaration: IrClass, fileInfo: KotlinFileInfo) : JvmClass() {
 
   private fun getPosition(declaration: IrClass, fileInfo: KotlinFileInfo): Position {
     var startIndex=declaration.startOffset
+    if(declaration.isAnonymousObject){
+      return fileInfo.getPosition(fileInfo.skipWhitespaces(startIndex),"object")
+    }
     when (declaration.kind.toString()) {
       "CLASS" -> startIndex = fileInfo.findKeyword(startIndex,"class")
       "INTERFACE" -> startIndex = fileInfo.findKeyword(startIndex,"interface")
       "ENUM_CLASS" -> startIndex = fileInfo.findKeyword(startIndex,"class")
+      "OBJECT" -> startIndex = fileInfo.findKeyword(startIndex,"object")
     }
     return fileInfo.getPosition(fileInfo.skipWhitespaces(startIndex),name)
   }

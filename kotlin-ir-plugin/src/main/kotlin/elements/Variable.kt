@@ -11,17 +11,17 @@ class Variable(declaration: IrValueDeclaration, fileInfo: KotlinFileInfo, functi
   init{
     super.setSourceFileName(fileInfo.sourceFileName)
     super.setName(declaration.name.asString())
+    super.setParameter(isParam)
     super.setPosition(getPosition(declaration,fileInfo))
     super.setSource(fileInfo.existsInSources(position))
     super.setType(declaration.type.originalKotlinType.toString())
     super.setLocal(declaration.isLocal)
-    super.setParameter(isParam)
     super.setInIIB(getInIIB(function))
     super.setDeclaringMethodId(getDeclaringMethodId(function))
     super.setSymbolId(createSymbolId(function))
   }
   private fun getPosition(declaration: IrValueDeclaration, fileInfo: KotlinFileInfo): Position {
-    if(isParameter){ //TODO:fix for parameter
+    if(isParameter && !fileInfo.startsWithVar(declaration.startOffset) && fileInfo.startsWithVar(declaration.startOffset)){
       val a=fileInfo.seeSource(declaration.startOffset,declaration.endOffset)
       return fileInfo.getPosition(fileInfo.skipWhitespaces(declaration.startOffset),name)
     }

@@ -2,6 +2,7 @@ package elements
 
 import org.clyze.persistent.model.Position
 import org.clyze.persistent.model.jvm.JvmMethod
+import org.jetbrains.kotlin.backend.common.ir.classIfConstructor
 import org.jetbrains.kotlin.backend.common.ir.isStatic
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrValueParameter
@@ -22,7 +23,7 @@ open class Function:JvmMethod{
   constructor(declaration: IrFunction, fileInfo: KotlinFileInfo, declaringClass: Class?):super(){
     super.setSourceFileName(fileInfo.sourceFileName)
     super.setName(declaration.name.asString())
-    super.setPosition(getPosition(declaration,fileInfo))
+    super.setPosition(getPosition(declaration,fileInfo,declaringClass))
     super.setSource(fileInfo.existsInSources(position))
     super.setDeclaringClassId(getDeclaringClassId(declaringClass))
     super.setReturnType(declaration.returnType.originalKotlinType.toString())
@@ -30,7 +31,7 @@ open class Function:JvmMethod{
     super.setParamTypes(getParamTypes(declaration.valueParameters))
     super.setSymbolId(createSymbolId(declaration))
     super.setStatic(declaration.isStatic)
-    super.setInterface(declaration.parentClassOrNull?.isInterface == true)
+    super.setInterface(declaringClass?.isInterface==true)
     super.setAbstract(declaration.toIrBasedDescriptor().modality.toString()=="ABSTRACT")
     super.setNative(declaration.isExternal)
     super.setSynchronized(declaration.toIrBasedDescriptor().findSynchronizedAnnotation()!=null)
@@ -44,13 +45,15 @@ open class Function:JvmMethod{
 
 
 
-  private fun getPosition(declaration: IrFunction, fileInfo: KotlinFileInfo): Position {
-    val a=fileInfo.seeSource(declaration.startOffset,declaration.endOffset) //TODO:remove
-
+  private fun getPosition(declaration: IrFunction, fileInfo: KotlinFileInfo,declaringClass: Class?): Position {
     if(name=="<init>"){
+      if(declaration.startOffset==declaration.parent.startOffset){
+        //primary constructor
+        return declaringClass!!.position
+      }
+      //secondary costructor
       val startIndex=fileInfo.findKeyword(declaration.startOffset,"constructor")
-      if(startIndex>=0) return fileInfo.getPosition(fileInfo.skipWhitespaces(startIndex),"constructor")
-      //TODO primary constructor pos?
+      return fileInfo.getPosition(startIndex,"constructor")
     }
 
     if(declaration.extensionReceiverParameter!=null){ //if extension receiver exists function name is after
@@ -64,7 +67,7 @@ open class Function:JvmMethod{
   }
 
   private fun getOuterPosition(declaration: IrFunction, fileInfo: KotlinFileInfo): Position {
-    return fileInfo.getPosition(declaration.startOffset,declaration.endOffset)
+    return fileInfo.getOuterPosition(declaration.startOffset,declaration.endOffset,isSource)
   }
 
   private fun getParams(parameters: List<IrValueParameter>): Array<String?> {
@@ -88,11 +91,7 @@ open class Function:JvmMethod{
   }
 
   private fun createSymbolId(declaration: IrFunction):String{
-    if(super.getDeclaringClassId()=="")
-      return "<"+declaration.parent.fqNameForIrSerialization.toString()+ ": "+super.getReturnType()+
-              " "+super.getName()+"("+super.getParamTypes().joinToString(separator=",")+")>"
-    return "<"+super.getDeclaringClassId()+ ": "+super.getReturnType()+
-      " "+super.getName()+"("+super.getParamTypes().joinToString(separator=",")+")>"
+    return "<"+declaration.parent.fqNameForIrSerialization.toString()+ ": "+returnType+" "+name+"("+paramTypes.joinToString(separator=",")+")>"
   }
 
    fun getHeapAllocationsCounter(symbolID: String):Int{

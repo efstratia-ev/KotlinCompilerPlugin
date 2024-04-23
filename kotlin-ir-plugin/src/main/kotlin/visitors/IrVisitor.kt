@@ -12,6 +12,7 @@ import java.nio.file.Paths
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.types.impl.originalKotlinType
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
@@ -24,6 +25,7 @@ class IrVisitor(private val outputPath: String, private val artifact: String): I
   private var fileInfo: KotlinFileInfo? =null
   private var functionStack=Stack<elements.Function>()
   private var classStack=Stack<Class>()
+
   override fun visitElement(element: IrElement) {
     element.acceptChildren(this, null)
   }
@@ -34,6 +36,7 @@ class IrVisitor(private val outputPath: String, private val artifact: String): I
     super.visitFile(declaration)
     val reporter = FileReporter(configuration, fileInfo!!.elements)
     val nm=Paths.get(declaration.name).fileName.toString()
+    fileInfo!!.outputFilePath
     reporter.createReportFile(outputPath+"/"+nm.substring(0,nm.length-3)+".json")
     reporter.printReportStats()
   }
@@ -62,6 +65,12 @@ class IrVisitor(private val outputPath: String, private val artifact: String): I
     functionStack.pop()
   }
 
+  override fun visitDeclaration(declaration: IrDeclarationBase) {
+    super.visitDeclaration(declaration)
+  }
+  override fun <T> visitConst(expression: IrConst<T>) {
+    super.visitConst(expression)
+  }
   override fun visitField(declaration: IrField) {
     val fieldElement=elements.Field(declaration, fileInfo!!,classStack.peek())
     fileInfo!!.elements.jvmFields.add(fieldElement)

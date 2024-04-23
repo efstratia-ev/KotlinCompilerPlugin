@@ -27,8 +27,8 @@ class HeapAllocation(expression: IrConstructorCall, fileInfo: KotlinFileInfo, fu
   }
 
   private fun createSymbolId(function: Function):String{
-    val id=if(isInIIB) "<"+function.declaringClassId+">" else super.getAllocatingMethodId()+"/"+function.getHeapAllocationsCounter(id)
-    return id+"/new "+super.getAllocatedTypeId()+"/"+function.getHeapAllocationsCounter(id)
+    val id=if(isInIIB) "<"+function.declaringClassId+">" else allocatingMethodId
+    return id+"/new "+allocatedTypeId+"/"+function.getHeapAllocationsCounter(id)
   }
 
   private fun createAllocatedTypeId(expression: IrConstructorCall):String{
